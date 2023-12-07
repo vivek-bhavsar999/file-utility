@@ -34,8 +34,8 @@ public class FileService {
         return fileRepository.save(file);
     }
 
-    public File download(long id) {
-        return fileRepository.findById(id).get();
+    public Optional<File> download(long id) {
+        return fileRepository.findById(id);
     }
 
     public PutObjectResult s3Upload(String path, String fileName, Optional<Map<String, String>> optionalMetadata, InputStream inputStream) {

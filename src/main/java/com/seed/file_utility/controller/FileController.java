@@ -1,6 +1,7 @@
 package com.seed.file_utility.controller;
 
 
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3Object;
 import com.seed.file_utility.model.File;
 import com.seed.file_utility.service.FileService;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 @RestController
 public class FileController {
@@ -36,10 +39,16 @@ public class FileController {
 
     @GetMapping("/download/{id}")
         public ResponseEntity<byte[]> download(@PathVariable long id) {
-            File file = fileService.download(id);
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
-                    .body(file.getData());
+            Optional<File> optionalFile = fileService.download(id);
+            if (optionalFile.isPresent()) {
+                File file = optionalFile.get();
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
+                        .body(file.getData());
+            }
+            else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(("File with id " + id + " not found.").getBytes());
+            }
         }
 
 
@@ -55,14 +64,19 @@ public class FileController {
 
     @GetMapping("/s3/download/{fileName}")
     public HttpEntity<byte[]> s3Download(@PathVariable String fileName) throws IOException {
-        S3Object s3Object = metadataService.download(fileName);
-        String contentType = s3Object.getObjectMetadata().getContentType();
-        var bytes = s3Object.getObjectContent().readAllBytes();
-        HttpHeaders header = new HttpHeaders();
-        header.setContentType(MediaType.valueOf(contentType));
-        header.setContentLength(bytes.length);
-        header.setContentDispositionFormData("attachment", fileName);
-        return new ResponseEntity<>(bytes, header, HttpStatus.OK);
+        try {
+            S3Object s3Object = metadataService.download(fileName);
+            String contentType = s3Object.getObjectMetadata().getContentType();
+            var bytes = s3Object.getObjectContent().readAllBytes();
+            HttpHeaders header = new HttpHeaders();
+            header.setContentType(MediaType.valueOf(contentType));
+            header.setContentLength(bytes.length);
+            header.setContentDispositionFormData("attachment", fileName);
+            return new ResponseEntity<>(bytes, header, HttpStatus.OK);
+        }
+        catch (AmazonS3Exception e) {
+            return new ResponseEntity<>(e.getMessage().getBytes(StandardCharsets.UTF_8), HttpStatus.NOT_FOUND);
+        }
     }
 }
 
