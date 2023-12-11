@@ -2,17 +2,16 @@ package com.seed.file_utility.service;
 
 
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.*;
 import com.seed.file_utility.repository.FileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -44,7 +43,19 @@ public class MetadataService {
         System.out.println(putObjectResult.toString());
     }
 
-    public S3Object download(String key) {
-        return fileService.s3Download("/", key);
+    public HttpEntity<byte[]> download(String key) throws IOException {
+        try {
+            S3Object s3Object = fileService.s3Download(bucketName, key);
+            String contentType = s3Object.getObjectMetadata().getContentType();
+            var bytes = s3Object.getObjectContent().readAllBytes();
+            HttpHeaders header = new HttpHeaders();
+            header.setContentType(MediaType.valueOf(contentType));
+            header.setContentLength(bytes.length);
+            header.setContentDispositionFormData("attachment", key);
+            return new ResponseEntity<>(bytes, header, HttpStatus.OK);
+        }
+        catch (AmazonS3Exception e) {
+            return new ResponseEntity<>(e.getMessage().getBytes(StandardCharsets.UTF_8), HttpStatus.NOT_FOUND);
+        }
     }
 }

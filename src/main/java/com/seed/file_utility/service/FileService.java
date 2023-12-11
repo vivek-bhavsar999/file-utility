@@ -25,9 +25,6 @@ public class FileService {
     @Autowired
     private FileRepository fileRepository;
 
-    @Value("${aws.s3.bucket.name}")
-    private String bucketName;
-
     public File upload(MultipartFile multipartFile) throws IOException {
         String name = StringUtils.cleanPath(multipartFile.getOriginalFilename());
         File file = new File(name, multipartFile.getBytes());
@@ -49,7 +46,7 @@ public class FileService {
         return putObjectResult;
     }
 
-    public S3Object s3Download(String path, String fileName) {
+    public S3Object s3Download(String bucketName, String fileName) {
         GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
         return amazonS3.getObject(getObjectRequest);
     }

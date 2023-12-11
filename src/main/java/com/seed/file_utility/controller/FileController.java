@@ -64,19 +64,8 @@ public class FileController {
 
     @GetMapping("/s3/download/{fileName}")
     public HttpEntity<byte[]> s3Download(@PathVariable String fileName) throws IOException {
-        try {
-            S3Object s3Object = metadataService.download(fileName);
-            String contentType = s3Object.getObjectMetadata().getContentType();
-            var bytes = s3Object.getObjectContent().readAllBytes();
-            HttpHeaders header = new HttpHeaders();
-            header.setContentType(MediaType.valueOf(contentType));
-            header.setContentLength(bytes.length);
-            header.setContentDispositionFormData("attachment", fileName);
-            return new ResponseEntity<>(bytes, header, HttpStatus.OK);
-        }
-        catch (AmazonS3Exception e) {
-            return new ResponseEntity<>(e.getMessage().getBytes(StandardCharsets.UTF_8), HttpStatus.NOT_FOUND);
-        }
+
+        return metadataService.download(fileName);
     }
 }
 
