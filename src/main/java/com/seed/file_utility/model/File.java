@@ -21,6 +21,7 @@ public class File {
     private String name;
 
     @Lob
+    @Column(length=2147483647)
     private byte[] data;
 
     public File(String name, byte[] data) {

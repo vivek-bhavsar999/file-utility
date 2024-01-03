@@ -1,18 +1,19 @@
 package com.seed.file_utility.controller;
 
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.S3Object;
+import com.seed.file_utility.model.AllowedFileType;
 import com.seed.file_utility.model.File;
+import com.seed.file_utility.service.AllowedFileTypeService;
 import com.seed.file_utility.service.FileService;
 import com.seed.file_utility.service.MetadataService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -24,17 +25,35 @@ public class FileController {
     @Autowired
     private MetadataService metadataService;
 
-    @PostMapping("/upload")
+
+    @PostMapping(path = "/upload", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<String> upload(@RequestParam MultipartFile file) throws IOException {
         String message = "";
-        try {
-            fileService.upload(file);
-            message = "File upload successful";
-            return ResponseEntity.status(HttpStatus.OK).body(message);
-        } catch (Exception e) {
-            message = "File upload failed";
+
+        if (file.isEmpty()) {
+            message = "No file provided";
             return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
         }
+
+        String fileName = file.getOriginalFilename();
+        int lastIndex = fileName.lastIndexOf('.') + 1;
+        String fileType = fileName.substring(lastIndex).toUpperCase();
+
+        if (AllowedFileTypeService.getAllowedFileTypes().contains(AllowedFileType.valueOf(fileType))) {
+            try {
+                fileService.upload(file);
+                message = "File upload successful";
+                return ResponseEntity.status(HttpStatus.OK).body(message);
+            } catch (Exception e) {
+                message = "File upload failed";
+                return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
+            }
+        }
+        else {
+            message = "File type - " + fileType + " not allowed.\nAllowed file types are - " + AllowedFileTypeService.getAllowedFileTypes();
+            return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
+        }
+
     }
 
     @GetMapping("/download/{id}")
@@ -52,13 +71,34 @@ public class FileController {
         }
 
 
-    @PostMapping("/s3/upload")
+    @PostMapping(path = "/s3/upload", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<String> s3Upload(@RequestParam MultipartFile file) throws IOException {
         String message = "";
+        if (file.isEmpty()) {
+            message = "No file provided";
+            return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
+        }
 
-            metadataService.upload(file);
-            message = "File upload to S3 successful";
-            return ResponseEntity.status(HttpStatus.OK).body(message);
+        String fileName = file.getOriginalFilename();
+        int lastIndex = fileName.lastIndexOf('.') + 1;
+        String fileType = fileName.substring(lastIndex).toUpperCase();
+
+        if (AllowedFileTypeService.getAllowedFileTypes().contains(AllowedFileType.valueOf(fileType))) {
+            try {
+                metadataService.upload(file);
+                message = "File upload to S3 successful";
+                return ResponseEntity.status(HttpStatus.OK).body(message);
+            } catch (Exception e) {
+                message = "File upload failed";
+                return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
+            }
+        }
+        else {
+            message = "File type - " + fileType + " not allowed.\nAllowed file types are - " + AllowedFileTypeService.getAllowedFileTypes();
+            return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
+        }
+
+
 
     }
 
