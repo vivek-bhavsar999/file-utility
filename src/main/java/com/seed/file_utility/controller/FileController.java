@@ -1,19 +1,17 @@
 package com.seed.file_utility.controller;
 
 
-import com.seed.file_utility.model.AllowedFileType;
+import com.seed.file_utility.model.ValidFileType;
 import com.seed.file_utility.model.File;
-import com.seed.file_utility.service.AllowedFileTypeService;
+import com.seed.file_utility.service.FileTypeService;
 import com.seed.file_utility.service.FileService;
 import com.seed.file_utility.service.MetadataService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -24,6 +22,9 @@ public class FileController {
 
     @Autowired
     private MetadataService metadataService;
+
+    @Autowired
+    private FileTypeService fileTypeService;
 
 
     @PostMapping(path = "/upload", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
@@ -39,7 +40,7 @@ public class FileController {
         int lastIndex = fileName.lastIndexOf('.') + 1;
         String fileType = fileName.substring(lastIndex).toUpperCase();
 
-        if (AllowedFileTypeService.getAllowedFileTypes().contains(AllowedFileType.valueOf(fileType))) {
+        if (fileTypeService.getAllowedFileTypes().contains(ValidFileType.valueOf(fileType))) {
             try {
                 fileService.upload(file);
                 message = "File upload successful";
@@ -50,7 +51,7 @@ public class FileController {
             }
         }
         else {
-            message = "File type - " + fileType + " not allowed.\nAllowed file types are - " + AllowedFileTypeService.getAllowedFileTypes();
+            message = "File type - " + fileType + " not allowed.\nAllowed file types are - " + fileTypeService.getAllowedFileTypes();
             return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
         }
 
@@ -83,7 +84,7 @@ public class FileController {
         int lastIndex = fileName.lastIndexOf('.') + 1;
         String fileType = fileName.substring(lastIndex).toUpperCase();
 
-        if (AllowedFileTypeService.getAllowedFileTypes().contains(AllowedFileType.valueOf(fileType))) {
+        if (fileTypeService.getAllowedFileTypes().contains(ValidFileType.valueOf(fileType))) {
             try {
                 metadataService.upload(file);
                 message = "File upload to S3 successful";
@@ -94,7 +95,7 @@ public class FileController {
             }
         }
         else {
-            message = "File type - " + fileType + " not allowed.\nAllowed file types are - " + AllowedFileTypeService.getAllowedFileTypes();
+            message = "File type - " + fileType + " not allowed.\nAllowed file types are - " + fileTypeService.getAllowedFileTypes();
             return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
         }
 

@@ -1,0 +1,36 @@
+package com.seed.file_utility.model;
+
+public enum ValidFileType {
+    TXT,
+    PDF,
+    DOC,
+    DOCX,
+    XLSX,
+    XLSM,
+    CSV,
+    PPS,
+    PPT,
+    PPTX,
+    DAT,
+    DB,
+    LOG,
+    SQL,
+    MDB,
+    TAR,
+    XML,
+    HTM,
+    HTML,
+    JS,
+    PHP,
+    PY,
+    XHTML,
+    JAVA,
+    C,
+    CPP,
+    CLASS,
+    SH,
+    SWIFT,
+    BAT,
+
+
+}
